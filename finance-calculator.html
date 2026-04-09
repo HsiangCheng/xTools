@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>金融计算器 - XSimple</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 25px;
+            font-size: 24px;
+        }
+
+        .calculator-section {
+            margin-bottom: 30px;
+            padding-bottom: 30px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .calculator-section:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .section-title {
+            font-size: 16px;
+            color: #667eea;
+            margin-bottom: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 16px;
+            background: #667eea;
+            margin-right: 8px;
+            border-radius: 2px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #555;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .result {
+            background: #f8f9ff;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+            text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .result-label {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .result-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .result-value.positive { color: #e74c3c; }
+        .result-value.negative { color: #27ae60; }
+        .result-value.blue { color: #3498db; }
+        .result-value.neutral { color: #95a5a6; }
+
+        .helper-text {
+            font-size: 11px;
+            color: #999;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 金融综合计算器</h1>
+
+        <!-- 1. 计算涨跌幅 -->
+        <div class="calculator-section">
+            <div class="section-title">计算涨跌幅百分比</div>
+            <div class="input-group">
+                <label>成本价格</label>
+                <input type="number" id="costPrice1" placeholder="买入价" step="0.001">
+            </div>
+            <div class="input-group">
+                <label>市场价格</label>
+                <input type="number" id="marketPrice1" placeholder="当前价" step="0.001">
+            </div>
+            <div class="result">
+                <span class="result-label">涨跌幅度：</span>
+                <span class="result-value neutral" id="changePercent">-</span>
+            </div>
+        </div>
+
+        <!-- 2. 根据涨跌幅计算价格 -->
+        <div class="calculator-section">
+            <div class="section-title">由于涨跌后的价格</div>
+            <div class="input-group">
+                <label>基准价格 (成本/市场)</label>
+                <input type="number" id="basePrice2" placeholder="请输入起始价格" step="0.001">
+            </div>
+            <div class="input-group">
+                <label>预期涨跌幅 (%)</label>
+                <input type="number" id="percent2" placeholder="例如: 10 或 -5" step="0.01">
+            </div>
+            <div class="result">
+                <span class="result-label">计算后价格：</span>
+                <span class="result-value neutral" id="targetPrice2">-</span>
+            </div>
+        </div>
+
+        <!-- 3. 计算股息率 -->
+        <div class="calculator-section">
+            <div class="section-title">计算股息率 (Dividend Yield)</div>
+            <div class="input-group">
+                <label>每股年度派息金额 (现金)</label>
+                <input type="number" id="dividendAmount" placeholder="如: 0.5" step="0.001">
+            </div>
+            <div class="input-group">
+                <label>股票价格 (成本价或现价)</label>
+                <input type="number" id="stockPrice3" placeholder="请输入价格" step="0.001">
+            </div>
+            <div class="result">
+                <span class="result-label">预期股息率：</span>
+                <span class="result-value blue" id="dividendYield">-</span>
+            </div>
+            <p class="helper-text">* 注：股息率通常以年度总分红除以买入成本或当前市价计算。</p>
+        </div>
+    </div>
+
+    <script>
+        // 辅助函数：更新样式
+        function updateStyle(element, value, isDividend = false) {
+            if (isDividend) {
+                element.className = 'result-value blue';
+                return;
+            }
+            if (value > 0) element.className = 'result-value positive';
+            else if (value < 0) element.className = 'result-value negative';
+            else element.className = 'result-value neutral';
+        }
+
+        // 1. 计算涨跌幅
+        function calcChange() {
+            const cost = parseFloat(document.getElementById('costPrice1').value);
+            const market = parseFloat(document.getElementById('marketPrice1').value);
+            const res = document.getElementById('changePercent');
+            
+            if (cost && market) {
+                const val = ((market - cost) / cost * 100).toFixed(2);
+                res.textContent = (val > 0 ? '+' : '') + val + '%';
+                updateStyle(res, val);
+            } else {
+                res.textContent = '-';
+                res.className = 'result-value neutral';
+            }
+        }
+
+        // 2. 计算目标价格
+        function calcPrice() {
+            const base = parseFloat(document.getElementById('basePrice2').value);
+            const percent = parseFloat(document.getElementById('percent2').value);
+            const res = document.getElementById('targetPrice2');
+
+            if (base && !isNaN(percent)) {
+                const val = (base * (1 + percent / 100)).toFixed(3);
+                res.textContent = val;
+                updateStyle(res, percent);
+            } else {
+                res.textContent = '-';
+                res.className = 'result-value neutral';
+            }
+        }
+
+        // 3. 计算股息率
+        function calcDividend() {
+            const dividend = parseFloat(document.getElementById('dividendAmount').value);
+            const price = parseFloat(document.getElementById('stockPrice3').value);
+            const res = document.getElementById('dividendYield');
+
+            if (dividend >= 0 && price > 0) {
+                const yieldVal = ((dividend / price) * 100).toFixed(2);
+                res.textContent = yieldVal + '%';
+            } else {
+                res.textContent = '-';
+            }
+        }
+
+        // 绑定事件
+        document.getElementById('costPrice1').addEventListener('input', calcChange);
+        document.getElementById('marketPrice1').addEventListener('input', calcChange);
+        document.getElementById('basePrice2').addEventListener('input', calcPrice);
+        document.getElementById('percent2').addEventListener('input', calcPrice);
+        document.getElementById('dividendAmount').addEventListener('input', calcDividend);
+        document.getElementById('stockPrice3').addEventListener('input', calcDividend);
+    </script>
+</body>
+</html>
